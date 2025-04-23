@@ -1,0 +1,76 @@
+# ========================================================================
+# PIPELINE DE DESARROLLO AUTOMATIZADO PARA MICROSERVICIOS
+# ========================================================================
+
+# Este pipeline se ejecuta automáticamente al:
+# 1. Hacer push a la rama main
+# 2. Cuando el "Infrastructure Pipeline" finaliza exitosamente
+name: Development Pipeline
+
+on:
+  pull_request:
+    branches:
+      - main
+  repository_dispatch:
+    types: [infra-completed]
+
+# Variables reutilizables a lo largo del workflow
+env:
+  ACR_NAME: 'gacomicroserviceappacr.azurecr.io' # Nombre completo del Azure Container Registry (ACR)
+  RESOURCE_GROUP: 'microservice-app-rg' # Grupo de recursos de Azure donde están desplegadas las Container Apps
+  AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS_COLONIA }} # Credenciales de Azure configuradas en GitHub Secrets
+  AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID_COLONIA }} # ID de la suscripción de Azure configuradas en GitHub Secrets
+  SERVICE_NAME: 'todos-api' # Nombre del microservicio
+
+jobs:
+  # ==============================================
+  # ETAPA PRINCIPAL: CONSTRUCCIÓN Y DESPLIEGUE
+  # ==============================================
+  build_and_deploy:
+    name: Build y Deploy
+    runs-on: ubuntu-latest # Ejecutor base
+
+    steps:
+      # Paso 1: Checkout del repositorio
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Paso 2: Autenticación con Azure
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ env.AZURE_CREDENTIALS }}
+
+      # Paso 3: Verificar que el grupo de recursos existe antes de continuar
+      - name: Verificar si el grupo de recursos existe
+        run: |
+          echo "Verificando existencia del grupo de recursos..."
+          if ! az group exists --name $RESOURCE_GROUP --subscription $AZURE_SUBSCRIPTION_ID | grep true; then
+            echo "❌ El grupo de recursos no existe. Abortando ejecución del pipeline."
+            exit 1
+          fi
+          echo "✅ El grupo de recursos existe."
+
+      # Paso 4: Login al Azure Container Registry
+      - name: Login al Azure Container Registry (ACR)
+        run: |
+          az acr login --name ${ACR_NAME%%.*}
+
+      # Paso 5: Construir y subir la imagen modificada
+      - name: Construcción y publicación de imagen
+        run: |
+          timestamp=$(date +%Y%m%d%H%M%S)  # Timestamp para versionado
+          # Build multi-tag (latest + timestamp)
+          docker build -t $ACR_NAME/$SERVICE_NAME:latest -t $ACR_NAME/$SERVICE_NAME:$timestamp .
+          # Push de ambas versiones
+          docker push $ACR_NAME/$SERVICE_NAME:latest
+          docker push $ACR_NAME/$SERVICE_NAME:$timestamp
+
+      # Paso 6: Desplegar la imagen modificada en sus Container App
+      - name: Despliegue en Azure Container App
+        run: |
+          az containerapp update \
+            --name $SERVICE_NAME \
+            --resource-group $RESOURCE_GROUP \
+            --image $ACR_NAME/$SERVICE_NAME:latest \
+            --subscription $AZURE_SUBSCRIPTION_ID
