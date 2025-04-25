@@ -14,16 +14,22 @@ on:
   pull_request:
     branches:
       - main
+  workflow_run:
+    workflows: ["Release"]
+    types:
+      - completed
   repository_dispatch:
     types: [infra-completed]
 
 # Variables reutilizables a lo largo del workflow
 env:
-  ACR_NAME: 'gacomicroserviceappacr.azurecr.io' # Nombre completo del Azure Container Registry (ACR)
-  RESOURCE_GROUP: 'microservice-app-rg' # Grupo de recursos de Azure donde están desplegadas las Container Apps
+  ACR_NAME: ${{ secrets.ACR_NAME }} # Nombre completo del Azure Container Registry (ACR)
+  RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP_NAME }} # Grupo de recursos de Azure donde están desplegadas las Container Apps
   AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS_COLONIA }} # Credenciales de Azure configuradas en GitHub Secrets
   AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID_COLONIA }} # ID de la suscripción de Azure configuradas en GitHub Secrets
-  SERVICE_NAME: 'todos-api' # Nombre del microservicio
+  GITHUB_REPOSITORY: 'MicroTodoSuite/microservice-app-todo-api' # Repositorio de todos-api
+  GH_TOKEN: ${{ secrets.GH_TOKEN }} # Github token con los permisos necesarios
+  SERVICE_NAME: "todos-api" # Nombre del microservicio
 
 jobs:
   # ==============================================
@@ -48,7 +54,7 @@ jobs:
       - name: Verificar si el grupo de recursos existe
         run: |
           echo "Verificando existencia del grupo de recursos..."
-          if ! az group exists --name $RESOURCE_GROUP --subscription $AZURE_SUBSCRIPTION_ID | grep true; then
+          if ! az group exists --name ${{ env.RESOURCE_GROUP }} --subscription ${{ env.AZURE_SUBSCRIPTION_ID }} | grep true; then
             echo "❌ El grupo de recursos no existe. Abortando ejecución del pipeline."
             exit 1
           fi
@@ -59,21 +65,50 @@ jobs:
         run: |
           az acr login --name ${ACR_NAME%%.*}
 
-      # Paso 5: Construir y subir la imagen modificada
-      - name: Construcción y publicación de imagen
+      # Paso 5: Obtener versión del último release o usar timestamp
+      - name: Obtener versión de la imagen
+        id: get-version
         run: |
-          timestamp=$(date +%Y%m%d%H%M%S)  # Timestamp para versionado
-          # Build multi-tag (latest + timestamp)
-          docker build -t $ACR_NAME/$SERVICE_NAME:latest -t $ACR_NAME/$SERVICE_NAME:$timestamp .
-          # Push de ambas versiones
-          docker push $ACR_NAME/$SERVICE_NAME:latest
-          docker push $ACR_NAME/$SERVICE_NAME:$timestamp
+          # Usa GitHub CLI para obtener el tag de la última release
+          VERSION=$(gh release list --repo $GITHUB_REPOSITORY --limit 1 --json tagName --jq '.[0].tagName')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
 
-      # Paso 6: Desplegar la imagen modificada en sus Container App
-      - name: Despliegue en Azure Container App
+      # Paso 6: Construir y subir imagen con doble tag
+      - name: Construir y subir imagen
         run: |
+          docker build -t $ACR_NAME/${{ env.SERVICE_NAME }}:${{ steps.get-version.outputs.version }} -t $ACR_NAME/${{ env.SERVICE_NAME }}:latest .
+          docker push $ACR_NAME/${{ env.SERVICE_NAME }}:${{ steps.get-version.outputs.version }}
+          docker push $ACR_NAME/${{ env.SERVICE_NAME }}:latest
+
+      # Paso 7: Desplegar la imagen modificada en sus Container App
+      - name: Despliegue en Azure Container App
+        if: ${{ github.event_name != 'repository_dispatch' }}
+        run: |
+          # Actualizar la Container App con la imagen correcta
+          echo "🚀 Actualizando ${{ env.SERVICE_NAME }}..."
           az containerapp update \
-            --name $SERVICE_NAME \
-            --resource-group $RESOURCE_GROUP \
-            --image $ACR_NAME/$SERVICE_NAME:latest \
-            --subscription $AZURE_SUBSCRIPTION_ID
+            --name ${{ env.SERVICE_NAME }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --image $ACR_NAME/${{ env.SERVICE_NAME }}:latest \
+            --subscription ${{ env.AZURE_SUBSCRIPTION_ID }}
+
+          # Reiniciar la revisión
+          echo "🔄 Reiniciando container de $app..."
+          revision=$(az containerapp show \
+            --name ${{ env.SERVICE_NAME }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --subscription ${{ env.AZURE_SUBSCRIPTION_ID }} \
+            --query "properties.latestReadyRevisionName" \
+            --output tsv)
+
+          if [[ -n "$revision" ]]; then
+            az containerapp revision restart \
+              --name ${{ env.SERVICE_NAME }} \
+              --resource-group ${{ env.RESOURCE_GROUP }} \
+              --revision $revision \
+              --subscription ${{ env.AZURE_SUBSCRIPTION_ID }}
+          else
+            echo "⚠️ No se encontró revisión lista para ${{ env.SERVICE_NAME }}, omitiendo reinicio"
+          fi
+          echo "✅ ${{ env.SERVICE_NAME }} actualizado correctamente"
+          echo "-------------------------------------------"
