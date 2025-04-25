@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/MicroTodoSuite/microservice-app-todos-api/compare/v1.0.0...v1.1.0) (2025-04-25)
+
+
+### Features
+
+* **pipeline:** add update of pipeline ([d9de1e5](https://github.com/MicroTodoSuite/microservice-app-todos-api/commit/d9de1e591155140c0c7300687f2dd2117335ca84))
+
 # 1.0.0 (2025-04-25)
 
 
