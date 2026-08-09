@@ -18,6 +18,7 @@ jobs:
       service-name: todos-api
       language: node
       sonar-project-key: MicroTodoSuite_todos-api
+      sonar-host-url: ${{ vars.SONAR_HOST_URL }}
     secrets: inherit
 
   release:
