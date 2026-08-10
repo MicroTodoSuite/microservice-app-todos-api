@@ -1,0 +1,42 @@
+name: ci
+
+# Thin caller: all CI/CD logic lives in the org reusable workflows
+# (MicroTodoSuite/.github). This repo declares only its identity and stack.
+# Legacy Azure Container Apps deploy and static credentials were removed
+# (roadmap task 4, spec 003).
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  ci:
+    uses: MicroTodoSuite/.github/.github/workflows/ci.yml@v1
+    with:
+      service-name: todos-api
+      language: node
+      sonar-project-key: MicroTodoSuite_todos-api
+      sonar-host-url: ${{ vars.SONAR_HOST_URL }}
+    secrets: inherit
+
+  release:
+    if: ${{ github.event_name == 'push' }}
+    needs: ci
+    uses: MicroTodoSuite/.github/.github/workflows/release.yml@v1
+    secrets:
+      release-token: ${{ secrets.GH_TOKEN }}
+
+  promote-dev:
+    if: ${{ github.event_name == 'push' && needs.release.outputs.released == 'true' }}
+    needs: [ci, release]
+    uses: MicroTodoSuite/.github/.github/workflows/promote.yml@v1
+    with:
+      service-name: todos-api
+      environment: dev
+      image-digest: ${{ needs.ci.outputs.image-digest }}
+      image-ref: ${{ needs.ci.outputs.image-ref }}
+    secrets:
+      gitops-app-id: ${{ secrets.GITOPS_PROMOTE_APP_ID }}
+      gitops-app-key: ${{ secrets.GITOPS_PROMOTE_APP_KEY }}
