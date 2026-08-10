@@ -38,4 +38,5 @@ jobs:
       image-digest: ${{ needs.ci.outputs.image-digest }}
       image-ref: ${{ needs.ci.outputs.image-ref }}
     secrets:
-      gitops-token: ${{ secrets.GITOPS_PROMOTE_TOKEN }}
+      gitops-app-id: ${{ secrets.GITOPS_PROMOTE_APP_ID }}
+      gitops-app-key: ${{ secrets.GITOPS_PROMOTE_APP_KEY }}
