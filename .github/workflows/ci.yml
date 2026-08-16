@@ -13,25 +13,33 @@ on:
 
 jobs:
   ci:
-    uses: MicroTodoSuite/.github/.github/workflows/ci.yml@v1
+    uses: MicroTodoSuite/.github/.github/workflows/ci.yml@0ea80036f4e92c32e24350c422b8d64d55da4a55
     with:
       service-name: todos-api
       language: node
+      test-command: npm ci --ignore-scripts && npm test
+      source-audit-command: npm audit --omit=dev --audit-level=high
+      ecr-repository: 995253610162.dkr.ecr.us-east-1.amazonaws.com/microtodosuite/todos-api
+      publisher-role-arn: arn:aws:iam::995253610162:role/microtodosuite-github-ecr-publisher
       sonar-project-key: MicroTodoSuite_todos-api
       sonar-host-url: ${{ vars.SONAR_HOST_URL }}
     secrets: inherit
 
   release:
-    if: ${{ github.event_name == 'push' }}
+    # Feature 005 owns the first shared-cluster release as one reviewed GitOps
+    # activation. Keep legacy semantic-release opt-in until its token exists.
+    if: ${{ github.event_name == 'push' && vars.ENABLE_LEGACY_SEMANTIC_RELEASE == 'true' }}
     needs: ci
-    uses: MicroTodoSuite/.github/.github/workflows/release.yml@v1
+    uses: MicroTodoSuite/.github/.github/workflows/release.yml@0ea80036f4e92c32e24350c422b8d64d55da4a55
     secrets:
       release-token: ${{ secrets.GH_TOKEN }}
 
   promote-dev:
-    if: ${{ github.event_name == 'push' && needs.release.outputs.released == 'true' }}
+    # Per-environment automation is intentionally disabled for the coordinated
+    # dev/staging/prod activation required by feature 005.
+    if: ${{ github.event_name == 'push' && vars.ENABLE_LEGACY_DEV_PROMOTION == 'true' && needs.release.outputs.released == 'true' }}
     needs: [ci, release]
-    uses: MicroTodoSuite/.github/.github/workflows/promote.yml@v1
+    uses: MicroTodoSuite/.github/.github/workflows/promote.yml@0ea80036f4e92c32e24350c422b8d64d55da4a55
     with:
       service-name: todos-api
       environment: dev
