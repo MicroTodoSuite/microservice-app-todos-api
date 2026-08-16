@@ -26,14 +26,18 @@ jobs:
     secrets: inherit
 
   release:
-    if: ${{ github.event_name == 'push' }}
+    # Feature 005 owns the first shared-cluster release as one reviewed GitOps
+    # activation. Keep legacy semantic-release opt-in until its token exists.
+    if: ${{ github.event_name == 'push' && vars.ENABLE_LEGACY_SEMANTIC_RELEASE == 'true' }}
     needs: ci
     uses: MicroTodoSuite/.github/.github/workflows/release.yml@0ea80036f4e92c32e24350c422b8d64d55da4a55
     secrets:
       release-token: ${{ secrets.GH_TOKEN }}
 
   promote-dev:
-    if: ${{ github.event_name == 'push' && needs.release.outputs.released == 'true' }}
+    # Per-environment automation is intentionally disabled for the coordinated
+    # dev/staging/prod activation required by feature 005.
+    if: ${{ github.event_name == 'push' && vars.ENABLE_LEGACY_DEV_PROMOTION == 'true' && needs.release.outputs.released == 'true' }}
     needs: [ci, release]
     uses: MicroTodoSuite/.github/.github/workflows/promote.yml@0ea80036f4e92c32e24350c422b8d64d55da4a55
     with:
