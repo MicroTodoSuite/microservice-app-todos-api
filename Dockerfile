@@ -8,9 +8,11 @@ RUN npm ci --omit=dev --ignore-scripts \
 FROM gcr.io/distroless/nodejs24-debian13:nonroot@sha256:fbbdda866ea71aef98c4abece17e3d61fbf820cc2ef3961522caa2478716171a
 
 WORKDIR /app
-COPY --from=dependencies --chown=nonroot:nonroot /app/node_modules ./node_modules
-COPY --chown=nonroot:nonroot server.js routes.js todoController.js ./
+COPY --from=dependencies --chown=65532:65532 /app/node_modules ./node_modules
+COPY --chown=65532:65532 server.js routes.js todoController.js ./
 
-USER nonroot:nonroot
+# The distroless nonroot account maps to UID/GID 65532. A numeric image user
+# lets Kubernetes verify runAsNonRoot before it starts the container.
+USER 65532:65532
 EXPOSE 8082
 CMD ["server.js"]
