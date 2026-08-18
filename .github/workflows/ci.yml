@@ -19,6 +19,8 @@ jobs:
       language: node
       sonar-project-key: MicroTodoSuite_todos-api
       sonar-host-url: ${{ vars.SONAR_HOST_URL }}
+      # Unit gate active: ci/unit.sh runs Jest + coverage (spec 006 T010).
+      run-unit: true
     secrets: inherit
 
   release:

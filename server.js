@@ -2,7 +2,7 @@
 
 const express = require('express');
 const bodyParser = require("body-parser");
-const jwt = require('express-jwt');
+const { expressjwt: jwt } = require('express-jwt');
 const prometheus = require('prom-client');
 const ZIPKIN_URL = process.env.ZIPKIN_URL || 'http://127.0.0.1:9411/api/v2/spans';
 
@@ -80,7 +80,7 @@ const localServiceName = 'todos-api';
 const tracer = new Tracer({ ctxImpl, recorder, localServiceName });
 
 // Middleware setup
-app.use(jwt({ secret: jwtSecret }));
+app.use(jwt({ secret: jwtSecret, algorithms: ['HS256'] }));
 app.use(zipkinMiddleware({ tracer }));
 
 // Error handling middleware for JWT authentication
