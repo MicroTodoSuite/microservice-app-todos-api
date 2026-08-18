@@ -1,0 +1,70 @@
+asyncapi: 3.1.0
+info:
+  title: log_channel events
+  version: 1.0.0
+  description: >
+    Todo lifecycle events published by todos-api and consumed by
+    log-message-processor over Redis pub/sub. This schema is the single source of
+    truth and MUST be byte-identical in both repositories (spec 007 / T004).
+  contact:
+    name: MicroTodoSuite
+    url: https://github.com/MicroTodoSuite
+    email: platform@microtodosuite.example
+  license:
+    name: MIT
+  tags:
+    - name: events
+servers:
+  redis:
+    host: 'redis:6379'
+    protocol: redis
+    description: Redis pub/sub broker.
+channels:
+  logChannel:
+    address: log_channel
+    description: Channel carrying todo create/delete operations.
+    messages:
+      todoOperation:
+        $ref: '#/components/messages/TodoOperation'
+operations:
+  publishTodoOperation:
+    action: send
+    summary: todos-api publishes a todo operation.
+    description: Emitted after a successful create or delete on the todo list.
+    channel:
+      $ref: '#/channels/logChannel'
+    messages:
+      - $ref: '#/channels/logChannel/messages/todoOperation'
+  consumeTodoOperation:
+    action: receive
+    summary: log-message-processor consumes a todo operation.
+    description: Received and logged by the worker, optionally traced to Zipkin.
+    channel:
+      $ref: '#/channels/logChannel'
+    messages:
+      - $ref: '#/channels/logChannel/messages/todoOperation'
+components:
+  messages:
+    TodoOperation:
+      name: TodoOperation
+      title: Todo create/delete operation
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/TodoOperationPayload'
+  schemas:
+    TodoOperationPayload:
+      type: object
+      required: [opName, username, todoId]
+      properties:
+        zipkinSpan:
+          description: Zipkin trace context captured at publish time.
+        opName:
+          type: string
+          enum: [CREATE, DELETE]
+        username:
+          type: string
+        todoId:
+          description: Numeric id on create; the path id (string) on delete.
+          oneOf:
+            - type: integer
+            - type: string

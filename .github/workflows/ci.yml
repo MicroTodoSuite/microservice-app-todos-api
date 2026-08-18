@@ -13,12 +13,13 @@ on:
 
 jobs:
   ci:
-    uses: MicroTodoSuite/.github/.github/workflows/ci.yml@0ea80036f4e92c32e24350c422b8d64d55da4a55
+    uses: MicroTodoSuite/.github/.github/workflows/ci.yml@e68d620ef0d14e7dd3d54e3f85eb035d84c25f41
     with:
       service-name: todos-api
       language: node
       test-command: npm ci --ignore-scripts && npm test
       source-audit-command: npm audit --omit=dev --audit-level=high
+      contract-command: npx --yes @stoplight/spectral-cli@6 lint contracts/openapi.yaml contracts/asyncapi.yaml --ruleset .spectral.yaml
       ecr-repository: 995253610162.dkr.ecr.us-east-1.amazonaws.com/microtodosuite/todos-api
       publisher-role-arn: arn:aws:iam::995253610162:role/microtodosuite-github-ecr-publisher
       sonar-project-key: MicroTodoSuite_todos-api
@@ -30,7 +31,7 @@ jobs:
     # activation. Keep legacy semantic-release opt-in until its token exists.
     if: ${{ github.event_name == 'push' && vars.ENABLE_LEGACY_SEMANTIC_RELEASE == 'true' }}
     needs: ci
-    uses: MicroTodoSuite/.github/.github/workflows/release.yml@0ea80036f4e92c32e24350c422b8d64d55da4a55
+    uses: MicroTodoSuite/.github/.github/workflows/release.yml@e68d620ef0d14e7dd3d54e3f85eb035d84c25f41
     secrets:
       release-token: ${{ secrets.GH_TOKEN }}
 
@@ -39,7 +40,7 @@ jobs:
     # dev/staging/prod activation required by feature 005.
     if: ${{ github.event_name == 'push' && vars.ENABLE_LEGACY_DEV_PROMOTION == 'true' && needs.release.outputs.released == 'true' }}
     needs: [ci, release]
-    uses: MicroTodoSuite/.github/.github/workflows/promote.yml@0ea80036f4e92c32e24350c422b8d64d55da4a55
+    uses: MicroTodoSuite/.github/.github/workflows/promote.yml@e68d620ef0d14e7dd3d54e3f85eb035d84c25f41
     with:
       service-name: todos-api
       environment: dev

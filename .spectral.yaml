@@ -1,0 +1,2 @@
+# Spectral ruleset for the todos-api contracts (spec 007): OpenAPI + AsyncAPI.
+extends: ["spectral:oas", "spectral:asyncapi"]
