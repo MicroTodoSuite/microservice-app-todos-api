@@ -1,0 +1,128 @@
+openapi: 3.1.0
+info:
+  title: Todos API
+  version: 1.0.0
+  description: >
+    Authenticated per-user todo list. Create/delete operations publish an event to
+    the Redis log_channel. Contract-first source of truth (spec 007 / T008).
+  contact:
+    name: MicroTodoSuite
+    url: https://github.com/MicroTodoSuite
+  license:
+    name: MIT
+servers:
+  - url: /
+    description: Environment-neutral; routed by the frontend proxy / ingress.
+tags:
+  - name: todos
+  - name: observability
+paths:
+  /todos:
+    get:
+      operationId: listTodos
+      tags: [todos]
+      summary: List the caller's todos.
+      description: Returns the authenticated user's todo items.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The caller's todo items keyed by id.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  $ref: '#/components/schemas/Todo'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      operationId: createTodo
+      tags: [todos]
+      summary: Create a todo.
+      description: Adds a todo for the authenticated user and publishes a CREATE event.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TodoCreate'
+      responses:
+        '200':
+          description: The created todo.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Todo'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /todos/{taskId}:
+    delete:
+      operationId: deleteTodo
+      tags: [todos]
+      summary: Delete a todo.
+      description: Removes a todo for the authenticated user and publishes a DELETE event.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Deleted.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /metrics:
+    get:
+      operationId: getMetrics
+      tags: [observability]
+      summary: Prometheus metrics exposition (public).
+      description: Exposes Prometheus metrics; no authentication required.
+      responses:
+        '200':
+          description: Prometheus text exposition format.
+          content:
+            text/plain:
+              schema:
+                type: string
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  responses:
+    Unauthorized:
+      description: Missing or invalid bearer token.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+  schemas:
+    Todo:
+      type: object
+      required: [id, content]
+      properties:
+        id:
+          type: integer
+        content:
+          type: string
+    TodoCreate:
+      type: object
+      additionalProperties: false
+      required: [content]
+      properties:
+        content:
+          type: string
+          minLength: 1
+    Error:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
