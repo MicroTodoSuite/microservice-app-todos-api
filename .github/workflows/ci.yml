@@ -51,3 +51,44 @@ jobs:
     secrets:
       gitops-app-id: ${{ secrets.GITOPS_PROMOTE_APP_ID }}
       gitops-app-key: ${{ secrets.GITOPS_PROMOTE_APP_KEY }}
+
+  promote-staging:
+    # Same immutable digest promoted to staging after dev (build-once).
+    if: ${{ github.event_name == 'push' && vars.ENABLE_LEGACY_DEV_PROMOTION == 'true' && needs.release.outputs.released == 'true' }}
+    needs: [ci, release, promote-dev]
+    uses: MicroTodoSuite/.github/.github/workflows/promote.yml@83b089bcb73a4a8c254b1413d4c03918786cfa63
+    with:
+      service-name: todos-api
+      environment: staging
+      image-digest: ${{ needs.ci.outputs.image-digest }}
+      image-ref: ${{ needs.ci.outputs.image-ref }}
+      publisher-role-arn: arn:aws:iam::995253610162:role/microtodosuite-github-ecr-publisher
+    secrets:
+      gitops-app-id: ${{ secrets.GITOPS_PROMOTE_APP_ID }}
+      gitops-app-key: ${{ secrets.GITOPS_PROMOTE_APP_KEY }}
+
+  gate-prod:
+    # Manual approval gate for production (configure required reviewers on the
+    # GitHub "prod" environment in this repo, or this step will not pause).
+    if: ${{ github.event_name == 'push' && vars.ENABLE_LEGACY_DEV_PROMOTION == 'true' && needs.release.outputs.released == 'true' }}
+    needs: [promote-staging]
+    runs-on: ubuntu-latest
+    environment: prod
+    steps:
+      - run: echo "production promotion approved"
+
+  promote-prod:
+    # Same immutable digest promoted to prod after approval; ArgoCD rolls it out
+    # as a canary with metric analysis (roadmap section 6).
+    if: ${{ github.event_name == 'push' && vars.ENABLE_LEGACY_DEV_PROMOTION == 'true' && needs.release.outputs.released == 'true' }}
+    needs: [ci, release, gate-prod]
+    uses: MicroTodoSuite/.github/.github/workflows/promote.yml@83b089bcb73a4a8c254b1413d4c03918786cfa63
+    with:
+      service-name: todos-api
+      environment: prod
+      image-digest: ${{ needs.ci.outputs.image-digest }}
+      image-ref: ${{ needs.ci.outputs.image-ref }}
+      publisher-role-arn: arn:aws:iam::995253610162:role/microtodosuite-github-ecr-publisher
+    secrets:
+      gitops-app-id: ${{ secrets.GITOPS_PROMOTE_APP_ID }}
+      gitops-app-key: ${{ secrets.GITOPS_PROMOTE_APP_KEY }}
