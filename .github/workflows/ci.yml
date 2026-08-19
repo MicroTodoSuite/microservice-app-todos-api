@@ -13,7 +13,7 @@ on:
 
 jobs:
   ci:
-    uses: MicroTodoSuite/.github/.github/workflows/ci.yml@e68d620ef0d14e7dd3d54e3f85eb035d84c25f41
+    uses: MicroTodoSuite/.github/.github/workflows/ci.yml@c5fd5a472f52e5c8d05edf2b50f55b7261827303
     with:
       service-name: todos-api
       language: node
@@ -31,16 +31,17 @@ jobs:
     # activation. Keep legacy semantic-release opt-in until its token exists.
     if: ${{ github.event_name == 'push' && vars.ENABLE_LEGACY_SEMANTIC_RELEASE == 'true' }}
     needs: ci
-    uses: MicroTodoSuite/.github/.github/workflows/release.yml@e68d620ef0d14e7dd3d54e3f85eb035d84c25f41
+    uses: MicroTodoSuite/.github/.github/workflows/release.yml@c5fd5a472f52e5c8d05edf2b50f55b7261827303
     secrets:
-      release-token: ${{ secrets.GH_TOKEN }}
+      release-app-id: ${{ secrets.RELEASE_APP_ID }}
+      release-app-key: ${{ secrets.RELEASE_APP_KEY }}
 
   promote-dev:
     # Per-environment automation is intentionally disabled for the coordinated
     # dev/staging/prod activation required by feature 005.
     if: ${{ github.event_name == 'push' && vars.ENABLE_LEGACY_DEV_PROMOTION == 'true' && needs.release.outputs.released == 'true' }}
     needs: [ci, release]
-    uses: MicroTodoSuite/.github/.github/workflows/promote.yml@e68d620ef0d14e7dd3d54e3f85eb035d84c25f41
+    uses: MicroTodoSuite/.github/.github/workflows/promote.yml@c5fd5a472f52e5c8d05edf2b50f55b7261827303
     with:
       service-name: todos-api
       environment: dev
