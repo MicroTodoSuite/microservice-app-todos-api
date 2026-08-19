@@ -1,3 +1,10 @@
+## [1.1.1](https://github.com/MicroTodoSuite/microservice-app-todos-api/compare/v1.1.0...v1.1.1) (2026-08-19)
+
+
+### Bug Fixes
+
+* use numeric runtime identity ([fc1fb35](https://github.com/MicroTodoSuite/microservice-app-todos-api/commit/fc1fb3593c9b20286a2a8b154efcc192cc3af705))
+
 # [1.1.0](https://github.com/MicroTodoSuite/microservice-app-todos-api/compare/v1.0.0...v1.1.0) (2025-04-25)
 
 
