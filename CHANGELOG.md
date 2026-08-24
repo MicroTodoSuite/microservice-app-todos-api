@@ -1,3 +1,10 @@
+# [1.2.0](https://github.com/MicroTodoSuite/microservice-app-todos-api/compare/v1.1.2...v1.2.0) (2026-08-24)
+
+
+### Features
+
+* add request duration histogram for golden-signal latency ([0e1b0e9](https://github.com/MicroTodoSuite/microservice-app-todos-api/commit/0e1b0e912ec8ba8d24e09ffb8cfd6ad1930461ef))
+
 ## [1.1.2](https://github.com/MicroTodoSuite/microservice-app-todos-api/compare/v1.1.1...v1.1.2) (2026-08-24)
 
 
