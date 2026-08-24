@@ -13,15 +13,15 @@ on:
 
 jobs:
   ci:
-    uses: MicroTodoSuite/.github/.github/workflows/ci.yml@83b089bcb73a4a8c254b1413d4c03918786cfa63
+    uses: MicroTodoSuite/.github/.github/workflows/ci.yml@5c4e133fc528ef6ff596d146150321ca94760721
     with:
       service-name: todos-api
       language: node
       test-command: npm ci --ignore-scripts && npm test
       source-audit-command: npm audit --omit=dev --audit-level=high
       contract-command: npx --yes @stoplight/spectral-cli@6 lint contracts/openapi.yaml contracts/asyncapi.yaml --ruleset .spectral.yaml
-      ecr-repository: 995253610162.dkr.ecr.us-east-1.amazonaws.com/microtodosuite/todos-api
-      publisher-role-arn: arn:aws:iam::995253610162:role/microtodosuite-github-ecr-publisher
+      ecr-repository: 916491575487.dkr.ecr.us-east-1.amazonaws.com/microtodosuite/todos-api
+      publisher-role-arn: arn:aws:iam::916491575487:role/microtodosuite-github-ecr-publisher
       sonar-project-key: MicroTodoSuite_todos-api
       sonar-host-url: ${{ vars.SONAR_HOST_URL }}
     secrets: inherit
@@ -31,7 +31,7 @@ jobs:
     # activation. Keep legacy semantic-release opt-in until its token exists.
     if: ${{ github.event_name == 'push' && vars.ENABLE_LEGACY_SEMANTIC_RELEASE == 'true' }}
     needs: ci
-    uses: MicroTodoSuite/.github/.github/workflows/release.yml@83b089bcb73a4a8c254b1413d4c03918786cfa63
+    uses: MicroTodoSuite/.github/.github/workflows/release.yml@5c4e133fc528ef6ff596d146150321ca94760721
     secrets:
       release-app-id: ${{ secrets.RELEASE_APP_ID }}
       release-app-key: ${{ secrets.RELEASE_APP_KEY }}
@@ -41,13 +41,13 @@ jobs:
     # dev/staging/prod activation required by feature 005.
     if: ${{ github.event_name == 'push' && vars.ENABLE_LEGACY_DEV_PROMOTION == 'true' && needs.release.outputs.released == 'true' }}
     needs: [ci, release]
-    uses: MicroTodoSuite/.github/.github/workflows/promote.yml@83b089bcb73a4a8c254b1413d4c03918786cfa63
+    uses: MicroTodoSuite/.github/.github/workflows/promote.yml@5c4e133fc528ef6ff596d146150321ca94760721
     with:
       service-name: todos-api
       environment: dev
       image-digest: ${{ needs.ci.outputs.image-digest }}
       image-ref: ${{ needs.ci.outputs.image-ref }}
-      publisher-role-arn: arn:aws:iam::995253610162:role/microtodosuite-github-ecr-publisher
+      publisher-role-arn: arn:aws:iam::916491575487:role/microtodosuite-github-ecr-publisher
     secrets:
       gitops-app-id: ${{ secrets.GITOPS_PROMOTE_APP_ID }}
       gitops-app-key: ${{ secrets.GITOPS_PROMOTE_APP_KEY }}
