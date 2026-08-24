@@ -61,6 +61,12 @@ function createApp (options = {}) {
     labelNames: ['method', 'status'],
     registers: [register]
   });
+  const requestDuration = new prometheus.Histogram({
+    name: 'todo_api_request_duration_seconds',
+    help: 'Duration of requests handled by the Todo API',
+    labelNames: ['method'],
+    registers: [register]
+  });
   prometheus.collectDefaultMetrics({ register, prefix: 'todos_api_' });
 
   app.get('/metrics', async (req, res) => {
@@ -69,7 +75,11 @@ function createApp (options = {}) {
   });
 
   app.use((req, res, next) => {
-    res.on('finish', () => requestCount.labels(req.method, String(res.statusCode)).inc());
+    const stopTimer = requestDuration.startTimer({ method: req.method });
+    res.on('finish', () => {
+      requestCount.labels(req.method, String(res.statusCode)).inc();
+      stopTimer();
+    });
     next();
   });
   app.use(expressjwt({
