@@ -62,7 +62,7 @@ jobs:
       environment: staging
       image-digest: ${{ needs.ci.outputs.image-digest }}
       image-ref: ${{ needs.ci.outputs.image-ref }}
-      publisher-role-arn: arn:aws:iam::995253610162:role/microtodosuite-github-ecr-publisher
+      publisher-role-arn: arn:aws:iam::916491575487:role/microtodosuite-github-ecr-publisher
     secrets:
       gitops-app-id: ${{ secrets.GITOPS_PROMOTE_APP_ID }}
       gitops-app-key: ${{ secrets.GITOPS_PROMOTE_APP_KEY }}
@@ -88,7 +88,7 @@ jobs:
       environment: prod
       image-digest: ${{ needs.ci.outputs.image-digest }}
       image-ref: ${{ needs.ci.outputs.image-ref }}
-      publisher-role-arn: arn:aws:iam::995253610162:role/microtodosuite-github-ecr-publisher
+      publisher-role-arn: arn:aws:iam::916491575487:role/microtodosuite-github-ecr-publisher
     secrets:
       gitops-app-id: ${{ secrets.GITOPS_PROMOTE_APP_ID }}
       gitops-app-key: ${{ secrets.GITOPS_PROMOTE_APP_KEY }}
