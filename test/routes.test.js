@@ -75,7 +75,21 @@ test('authenticated create publishes the existing Redis event contract', async (
   assert.deepEqual(await response.json(), { content: 'Verify namespace release', id: 3 });
   assert.equal(publications.length, 1);
   assert.equal(publications[0].channel, 'test-log-channel');
-  assert.deepEqual(JSON.parse(publications[0].message), {
+  const published = JSON.parse(publications[0].message);
+
+  // correlationId was added deliberately (spec 009, T080) so an audit line can
+  // be tied back to the request that caused it. It is checked separately from
+  // the rest because it is a generated uuid, and asserted as present rather
+  // than dropped from the comparison: silently ignoring it here would let a
+  // regression that stops emitting it pass unnoticed.
+  assert.match(
+    published.correlationId,
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
+    'the audit line must carry a correlation id'
+  );
+  delete published.correlationId;
+
+  assert.deepEqual(published, {
     zipkinSpan: {
       _traceId: { value: 'trace-id' },
       _spanId: 'span-id',

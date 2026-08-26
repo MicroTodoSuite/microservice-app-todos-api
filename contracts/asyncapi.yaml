@@ -68,3 +68,11 @@ components:
           oneOf:
             - type: integer
             - type: string
+        correlationId:
+          type: string
+          description: >-
+            The X-Request-Id of the HTTP request that produced this operation.
+            Additive and optional: the consumer reads only zipkinSpan and prints
+            the rest, so an older publisher that omits it still processes
+            cleanly. It exists so an audit line can be tied back to the request
+            that caused it without going through Zipkin.
