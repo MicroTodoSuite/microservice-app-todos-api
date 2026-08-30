@@ -8,11 +8,9 @@ Every section below is required. Where one genuinely does not apply, write
 Title: the same Conventional Commit string as the primary commit, e.g.
   feat(us3): implement the auth-api operational contract
 
-Language: the TITLE is English (it becomes the squash-merge commit subject).
-The BODY is bilingual — write every section in English, then repeat it under a
-`## Español` heading. Same content, not a summary. See section 3.
-This applies to AI agents too: write both halves, do not leave one for someone
-else.
+Written in English — title, body, and review comments. No bilingual sections.
+See section 3 of the conventions. Discussing the change in another language is
+fine; writing it into the repository is not.
 -->
 
 ## What changes
@@ -65,8 +63,3 @@ else.
      - Report faithfully: if CI is red, say what is red. If a step was skipped,
        say it was skipped. -->
 
----
-
-## Español
-
-<!-- Repite arriba, en español. Mismo contenido, no un resumen. -->
