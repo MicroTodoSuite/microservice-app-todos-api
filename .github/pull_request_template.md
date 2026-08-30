@@ -7,6 +7,10 @@ Every section below is required. Where one genuinely does not apply, write
 
 Title: the same Conventional Commit string as the primary commit, e.g.
   feat(us3): implement the auth-api operational contract
+
+Written in English — title, body, and review comments. See section 3 of the
+conventions. Discussing the change in another language is fine; writing it into
+the repository is not.
 -->
 
 ## What changes
