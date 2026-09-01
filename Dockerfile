@@ -9,7 +9,7 @@ FROM gcr.io/distroless/nodejs24-debian13:nonroot@sha256:ffab599740d4aaa66029d02b
 
 WORKDIR /app
 COPY --from=dependencies --chown=65532:65532 /app/node_modules ./node_modules
-COPY --chown=65532:65532 server.js routes.js todoController.js ./
+COPY --chown=65532:65532 server.js routes.js todoController.js operational.js ./
 
 # The distroless nonroot account maps to UID/GID 65532. A numeric image user
 # lets Kubernetes verify runAsNonRoot before it starts the container.
