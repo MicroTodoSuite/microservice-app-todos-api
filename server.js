@@ -13,6 +13,14 @@ const CLSContext = require('zipkin-context-cls');
 const { HttpLogger } = require('zipkin-transport-http');
 const zipkinMiddleware = require('zipkin-instrumentation-express').expressMiddleware;
 const routes = require('./routes');
+const {
+  createHealthState,
+  registerOperationalRoutes,
+  correlationMiddleware,
+  loadRuntimeConfig,
+  attachRedisErrorHandler,
+  createCircuitBreaker
+} = require('./operational');
 
 function createRedisClient () {
   return redis.createClient({
@@ -54,6 +62,19 @@ function createApp (options = {}) {
   const logChannel = options.logChannel || process.env.REDIS_CHANNEL || 'log_channel';
   const jwtSecret = options.jwtSecret || process.env.JWT_SECRET || 'foo';
 
+  const config = options.config || loadRuntimeConfig();
+  const health = createHealthState();
+
+  // node-redis reports connection failures as an 'error' event. Unhandled, that
+  // event terminates the process, so a Redis restart would take the todo API
+  // down for the sake of its audit log.
+  attachRedisErrorHandler(redisClient);
+
+  const redisBreaker = createCircuitBreaker({
+    failureThreshold: config.redis.failureThreshold,
+    openMs: config.redis.breakerOpenMs
+  });
+
   const register = new prometheus.Registry();
   const requestCount = new prometheus.Counter({
     name: 'todo_api_requests_total',
@@ -69,10 +90,14 @@ function createApp (options = {}) {
   });
   prometheus.collectDefaultMetrics({ register, prefix: 'todos_api_' });
 
-  app.get('/metrics', async (req, res) => {
+  const metricsHandler = async (req, res) => {
     res.set('Content-Type', register.contentType);
     res.end(await register.metrics());
-  });
+  };
+
+  // Correlation first, so every downstream log line and the audit record all
+  // carry the same id.
+  app.use(correlationMiddleware());
 
   app.use((req, res, next) => {
     const stopTimer = requestDuration.startTimer({ method: req.method });
@@ -82,6 +107,11 @@ function createApp (options = {}) {
     });
     next();
   });
+  // Before expressjwt, deliberately: a probe or a scrape that needs a token
+  // answers 401, Kubernetes reads that as unhealthy, and every pod restarts
+  // forever while the application is fine.
+  registerOperationalRoutes(app, health, metricsHandler);
+
   app.use(expressjwt({
     secret: jwtSecret,
     algorithms: ['HS256'],
@@ -100,7 +130,16 @@ function createApp (options = {}) {
 
   app.use(express.urlencoded({ extended: false }));
   app.use(express.json());
-  routes(app, { tracer, redisClient, logChannel });
+  app.locals.health = health;
+  app.locals.config = config;
+
+  routes(app, {
+    tracer,
+    redisClient,
+    logChannel,
+    redisBreaker,
+    redisPublishTimeoutMs: options.redisPublishTimeoutMs || config.redis.publishTimeoutMs
+  });
 
   return app;
 }

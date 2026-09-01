@@ -1,5 +1,6 @@
 'use strict';
 const cache = require('memory-cache');
+const { publishAudit } = require('./operational');
 const {Annotation, 
     jsonEncoder: {JSON_V2}} = require('zipkin');
 
@@ -7,10 +8,12 @@ const OPERATION_CREATE = 'CREATE',
       OPERATION_DELETE = 'DELETE';
 
 class TodoController {
-    constructor({tracer, redisClient, logChannel}) {
+    constructor({tracer, redisClient, logChannel, redisBreaker, redisPublishTimeoutMs}) {
         this._tracer = tracer;
         this._redisClient = redisClient;
         this._logChannel = logChannel;
+        this._redisBreaker = redisBreaker;
+        this._redisPublishTimeoutMs = redisPublishTimeoutMs || 1000;
     }
 
     // TODO: these methods are not concurrent-safe
@@ -33,7 +36,7 @@ class TodoController {
         data.lastInsertedID++
         this._setTodoData(req.user.username, data)
 
-        this._logOperation(OPERATION_CREATE, req.user.username, todo.id)
+        this._logOperation(OPERATION_CREATE, req.user.username, todo.id, req.correlationId)
 
         res.json(todo)
     }
@@ -44,21 +47,37 @@ class TodoController {
         delete data.items[id]
         this._setTodoData(req.user.username, data)
 
-        this._logOperation(OPERATION_DELETE, req.user.username, id)
+        this._logOperation(OPERATION_DELETE, req.user.username, id, req.correlationId)
 
         res.status(204)
         res.send()
     }
 
-    _logOperation (opName, username, todoId) {
+    // Best-effort audit write.
+    //
+    // Redis carries the audit log, not the todos, so a Redis failure must cost
+    // the audit line and nothing else. publishAudit contains all three ways
+    // this can go wrong — an error callback, a synchronous throw, and a call
+    // that never settles — and always resolves, so the response is never held
+    // open waiting on a logging dependency.
+    //
+    // Deliberately not awaited: the write has already succeeded by the time
+    // this runs, and awaiting would put Redis latency back on the request path.
+    _logOperation (opName, username, todoId, correlationId) {
         this._tracer.scoped(() => {
             const traceId = this._tracer.id;
-            this._redisClient.publish(this._logChannel, JSON.stringify({
+            const message = JSON.stringify({
                 zipkinSpan: traceId,
                 opName: opName,
                 username: username,
                 todoId: todoId,
-            }))
+                correlationId: correlationId,
+            });
+
+            publishAudit(this._redisClient, this._logChannel, message, {
+                timeoutMs: this._redisPublishTimeoutMs,
+                breaker: this._redisBreaker,
+            });
         })
     }
 
