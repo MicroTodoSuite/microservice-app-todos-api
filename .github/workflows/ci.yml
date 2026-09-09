@@ -13,15 +13,15 @@ on:
 
 jobs:
   ci:
-    uses: MicroTodoSuite/.github/.github/workflows/ci.yml@5c4e133fc528ef6ff596d146150321ca94760721
+    uses: MicroTodoSuite/.github/.github/workflows/ci.yml@11fbdb2be18caba7b7c7528c1e7f48b8e028977d
     with:
       service-name: todos-api
       language: node
       test-command: npm ci --ignore-scripts && npm test
       source-audit-command: npm audit --omit=dev --audit-level=high
       contract-command: npx --yes @stoplight/spectral-cli@6 lint contracts/openapi.yaml contracts/asyncapi.yaml --ruleset .spectral.yaml
-      ecr-repository: 916491575487.dkr.ecr.us-east-1.amazonaws.com/microtodosuite/todos-api
-      publisher-role-arn: arn:aws:iam::916491575487:role/microtodosuite-github-ecr-publisher
+      ecr-repository: 575172595729.dkr.ecr.us-east-1.amazonaws.com/microtodosuite/todos-api
+      publisher-role-arn: arn:aws:iam::575172595729:role/microtodosuite-github-ecr-publisher
       sonar-project-key: MicroTodoSuite_todos-api
       sonar-host-url: ${{ vars.SONAR_HOST_URL }}
     secrets: inherit
@@ -47,7 +47,7 @@ jobs:
       environment: dev
       image-digest: ${{ needs.ci.outputs.image-digest }}
       image-ref: ${{ needs.ci.outputs.image-ref }}
-      publisher-role-arn: arn:aws:iam::916491575487:role/microtodosuite-github-ecr-publisher
+      publisher-role-arn: arn:aws:iam::575172595729:role/microtodosuite-github-ecr-publisher
     secrets:
       gitops-app-id: ${{ secrets.GITOPS_PROMOTE_APP_ID }}
       gitops-app-key: ${{ secrets.GITOPS_PROMOTE_APP_KEY }}
@@ -62,7 +62,7 @@ jobs:
       environment: staging
       image-digest: ${{ needs.ci.outputs.image-digest }}
       image-ref: ${{ needs.ci.outputs.image-ref }}
-      publisher-role-arn: arn:aws:iam::916491575487:role/microtodosuite-github-ecr-publisher
+      publisher-role-arn: arn:aws:iam::575172595729:role/microtodosuite-github-ecr-publisher
     secrets:
       gitops-app-id: ${{ secrets.GITOPS_PROMOTE_APP_ID }}
       gitops-app-key: ${{ secrets.GITOPS_PROMOTE_APP_KEY }}
@@ -88,7 +88,7 @@ jobs:
       environment: prod
       image-digest: ${{ needs.ci.outputs.image-digest }}
       image-ref: ${{ needs.ci.outputs.image-ref }}
-      publisher-role-arn: arn:aws:iam::916491575487:role/microtodosuite-github-ecr-publisher
+      publisher-role-arn: arn:aws:iam::575172595729:role/microtodosuite-github-ecr-publisher
     secrets:
       gitops-app-id: ${{ secrets.GITOPS_PROMOTE_APP_ID }}
       gitops-app-key: ${{ secrets.GITOPS_PROMOTE_APP_KEY }}
