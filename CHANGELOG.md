@@ -1,3 +1,17 @@
+# [1.3.0](https://github.com/MicroTodoSuite/microservice-app-todos-api/compare/v1.2.0...v1.3.0) (2026-09-09)
+
+
+### Bug Fixes
+
+* **ci:** target replacement AWS account ([9dd36ea](https://github.com/MicroTodoSuite/microservice-app-todos-api/commit/9dd36ea3b12376bbf4c0d00c6f6e636b62e7948c))
+* **us3:** refresh the todos runtime base ([86a6882](https://github.com/MicroTodoSuite/microservice-app-todos-api/commit/86a6882f19e8bcd2363da073d7b96577c29a2fda))
+
+
+### Features
+
+* **us3:** implement the todos-api operational contract ([87fd274](https://github.com/MicroTodoSuite/microservice-app-todos-api/commit/87fd274595c5fac3403355c6c4fa1a591218a2ab))
+* **us3:** package the todos operational runtime ([48627b2](https://github.com/MicroTodoSuite/microservice-app-todos-api/commit/48627b2bd66686fc6cf32addb39536c8a1c1588b))
+
 # [1.2.0](https://github.com/MicroTodoSuite/microservice-app-todos-api/compare/v1.1.2...v1.2.0) (2026-08-24)
 
 
