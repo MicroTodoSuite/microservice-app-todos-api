@@ -27,17 +27,6 @@ async function start (app) {
   return `http://127.0.0.1:${server.address().port}`;
 }
 
-function stubTracer () {
-  return {
-    id: {
-      _traceId: { value: 'trace-id' },
-      _spanId: 'span-id',
-      _sampled: { value: true }
-    },
-    scoped: callback => callback()
-  };
-}
-
 function buildApp (overrides = {}) {
   const publications = [];
   const redisClient = overrides.redisClient || {
@@ -48,11 +37,9 @@ function buildApp (overrides = {}) {
   };
 
   const app = createApp({
-    tracer: stubTracer(),
     redisClient,
     logChannel: 'test-log-channel',
     jwtSecret: 'test-secret',
-    enableTracing: false,
     ...overrides.appOptions
   });
 

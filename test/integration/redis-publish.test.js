@@ -32,8 +32,6 @@ test('creating a todo publishes a CREATE event to log_channel on real Redis', as
     redisClient: publisher,
     logChannel: channel,
     jwtSecret: 'it-secret',
-    enableTracing: false,
-    tracer: { id: { traceId: 'it' }, scoped: (cb) => cb() },
   });
   const server = app.listen(0, '127.0.0.1');
   await new Promise((resolve) => server.once('listening', resolve));

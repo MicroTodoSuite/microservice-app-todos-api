@@ -19,23 +19,13 @@ async function start (app) {
 
 function fixture () {
   const publications = [];
-  const tracer = {
-    id: {
-      _traceId: { value: 'trace-id' },
-      _spanId: 'span-id',
-      _sampled: { value: true }
-    },
-    scoped: callback => callback()
-  };
   const redisClient = {
     publish: (channel, message) => publications.push({ channel, message })
   };
   const app = createApp({
-    tracer,
     redisClient,
     logChannel: 'test-log-channel',
-    jwtSecret: 'test-secret',
-    enableTracing: false
+    jwtSecret: 'test-secret'
   });
   return { app, publications };
 }
@@ -89,12 +79,9 @@ test('authenticated create publishes the existing Redis event contract', async (
   );
   delete published.correlationId;
 
+  // No tracing is started in this process, so the message carries no trace
+  // context; test/tracing.test.js covers the traced message (spec 010).
   assert.deepEqual(published, {
-    zipkinSpan: {
-      _traceId: { value: 'trace-id' },
-      _spanId: 'span-id',
-      _sampled: { value: true }
-    },
     opName: 'CREATE',
     username: 'route-test-user',
     todoId: 3
