@@ -57,7 +57,7 @@ fine; writing it into the repository is not.
 
 <!-- Reminders that are not optional:
      - No self-approval. No `--admin` merge. No force-push to main.
-     - Never disable a branch protection rule to land your own work.
+     - Never disable a branch protection rule to land one's own work.
      - An AI agent may open and update this PR. It may not approve it, and may
        not author an acceptance artifact.
      - Report faithfully: if CI is red, say what is red. If a step was skipped,

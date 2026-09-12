@@ -46,14 +46,14 @@ JWT_SECRET=PRFT TODO_API_PORT=8082 npm start
 ```
 
 ## Usage
-In case you need to test this API, you can use it as follows:
+The API can be exercised as follows:
 ```
  curl -X POST -H "Authorization: Bearer $token" http://127.0.0.1:8082/todos -d '{"content": "deal with that"}'
 ```
-where `$token` is the response you get from [Auth API](/auth-api). 
+where `$token` is the token returned by [Auth API](/auth-api).
 
 ## Dependencies
-Here you can find the software required to run this microservice, as well as the version we have tested. 
+The software required to run this microservice, and the version that was tested:
 |  Dependency | Version  |
 |-------------|----------|
 | Node        | 8.17.0   |
