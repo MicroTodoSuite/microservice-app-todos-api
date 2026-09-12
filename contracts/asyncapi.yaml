@@ -38,7 +38,9 @@ operations:
   consumeTodoOperation:
     action: receive
     summary: log-message-processor consumes a todo operation.
-    description: Received and logged by the worker, optionally traced to Zipkin.
+    description: >-
+      Received and logged by the worker, which continues the publisher's trace
+      when the message carries W3C trace context.
     channel:
       $ref: '#/channels/logChannel'
     messages:
@@ -56,8 +58,18 @@ components:
       type: object
       required: [opName, username, todoId]
       properties:
-        zipkinSpan:
-          description: Zipkin trace context captured at publish time.
+        traceparent:
+          type: string
+          pattern: '^00-[0-9a-f]{32}-[0-9a-f]{16}-[0-9a-f]{2}$'
+          description: >-
+            W3C trace context of the span that published this operation.
+            Optional: a message without it, or with an invalid value, is still
+            processed and starts a new trace.
+        tracestate:
+          type: string
+          description: >-
+            W3C trace state of the publishing span, present only when that span
+            carries one.
         opName:
           type: string
           enum: [CREATE, DELETE]
@@ -72,7 +84,7 @@ components:
           type: string
           description: >-
             The X-Request-Id of the HTTP request that produced this operation.
-            Additive and optional: the consumer reads only zipkinSpan and prints
-            the rest, so an older publisher that omits it still processes
-            cleanly. It exists so an audit line can be tied back to the request
-            that caused it without going through Zipkin.
+            Additive and optional: the consumer reads only the trace context
+            and prints the rest, so an older publisher that omits it still
+            processes cleanly. It exists so an audit line can be tied back to
+            the request that caused it without querying the tracing backend.
