@@ -1,0 +1,13 @@
+name: pull request conventions
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  conventions:
+    uses: MicroTodoSuite/.github/.github/workflows/conventions.yml@485da19137c9a7c6275d60d810fb825cfd4307e5
