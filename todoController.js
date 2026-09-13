@@ -1,15 +1,14 @@
 'use strict';
 const cache = require('memory-cache');
+const { SpanKind, SpanStatusCode, context, propagation } = require('@opentelemetry/api');
 const { publishAudit } = require('./operational');
-const {Annotation, 
-    jsonEncoder: {JSON_V2}} = require('zipkin');
+const { tracer } = require('./tracing');
 
 const OPERATION_CREATE = 'CREATE',
       OPERATION_DELETE = 'DELETE';
 
 class TodoController {
-    constructor({tracer, redisClient, logChannel, redisBreaker, redisPublishTimeoutMs}) {
-        this._tracer = tracer;
+    constructor({redisClient, logChannel, redisBreaker, redisPublishTimeoutMs}) {
         this._redisClient = redisClient;
         this._logChannel = logChannel;
         this._redisBreaker = redisBreaker;
@@ -63,20 +62,38 @@ class TodoController {
     //
     // Deliberately not awaited: the write has already succeeded by the time
     // this runs, and awaiting would put Redis latency back on the request path.
+    //
+    // The publish is a PRODUCER span, and the message carries that span's W3C
+    // context (spec 010): log-message-processor continues the trace from here.
+    // Without started tracing the span is a no-op and the message carries no
+    // trace context, which the contract allows.
     _logOperation (opName, username, todoId, correlationId) {
-        this._tracer.scoped(() => {
-            const traceId = this._tracer.id;
+        tracer().startActiveSpan(`${this._logChannel} publish`, {
+            kind: SpanKind.PRODUCER,
+            attributes: {
+                'messaging.system': 'redis',
+                'messaging.destination.name': this._logChannel,
+                'messaging.operation.type': 'publish',
+            },
+        }, span => {
+            const traceContext = {};
+            propagation.inject(context.active(), traceContext);
             const message = JSON.stringify({
-                zipkinSpan: traceId,
                 opName: opName,
                 username: username,
                 todoId: todoId,
                 correlationId: correlationId,
+                ...traceContext,
             });
 
             publishAudit(this._redisClient, this._logChannel, message, {
                 timeoutMs: this._redisPublishTimeoutMs,
                 breaker: this._redisBreaker,
+            }).then(result => {
+                if (!result.published) {
+                    span.setStatus({ code: SpanStatusCode.ERROR, message: result.reason });
+                }
+                span.end();
             });
         })
     }

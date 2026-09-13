@@ -1,11 +1,11 @@
 ## Overview
 This Node.js REST API provides authenticated list, create, and delete operations for per-user todo items stored in process memory.
-It exposes Prometheus metrics, reports traces to Zipkin, and publishes create/delete events to Redis for `log-message-processor`.
+It exposes Prometheus metrics, reports traces through OpenTelemetry to Jaeger, and publishes create/delete events to Redis for `log-message-processor`.
 
 ## Stack
 - Language/runtime: CommonJS JavaScript on Node.js 8.17.0 with npm 6.13.4, as documented and used by `node:8.17.0-alpine`.
 - Framework: Express 4.15.4 (`^4.15.4` in `package.json`, pinned to 4.15.4 in `package-lock.json`).
-- Integrations: `express-jwt` 5.3.0, Redis client 2.8.0, `prom-client` 12.0.0, `zipkin` 0.11.2, `zipkin-context-cls` 0.11.0, and Zipkin Express/HTTP packages 0.11.2.
+- Integrations: `express-jwt` 5.3.0, Redis client 2.8.0, `prom-client` 12.0.0, and OpenTelemetry tracing (`@opentelemetry/sdk-trace-node` 2.11.0, the OTLP gRPC exporter 0.222.0, and the HTTP and Express instrumentations).
 
 ## Commands
 - Install/build: `npm install` (the README's documented build step and the Dockerfile's dependency-install command).
@@ -15,7 +15,8 @@ It exposes Prometheus metrics, reports traces to Zipkin, and publishes create/de
 - Tests: no test files, test framework, or `test` script are present, so this repository defines no test command.
 
 ## Structure
-- `server.js`: creates the Express app and configures Redis, JWT validation, Prometheus metrics, Zipkin tracing, and the listener.
+- `server.js`: starts tracing first, then creates the Express app and configures Redis, JWT validation, Prometheus metrics, and the listener.
+- `tracing.js`: OpenTelemetry tracer provider, OTLP export when `OTEL_EXPORTER_OTLP_ENDPOINT` is set, and HTTP and Express instrumentations that skip `/health/*` and `/metrics`.
 - `routes.js`: maps `/todos` and `/todos/:taskId` to controller operations.
 - `todoController.js`: stores per-user todos in memory and publishes create/delete events to Redis.
 - `package.json` / `package-lock.json`: npm scripts plus declared and locked dependencies.
@@ -26,7 +27,7 @@ It exposes Prometheus metrics, reports traces to Zipkin, and publishes create/de
 - Source files live at the repository root rather than under `src/`; modules use CommonJS and `'use strict'`.
 - Todo state is keyed by `req.user.username`; a new user receives three seeded items, and mutations are explicitly not concurrency-safe.
 - `/metrics` is registered before JWT middleware and is public; all `/todos` routes require a JWT bearer token.
-- The API has no update route, and only create/delete operations publish Redis messages containing the Zipkin trace ID.
+- The API has no update route, and only create/delete operations publish Redis messages, each carrying the W3C `traceparent` of its publish span (`contracts/asyncapi.yaml`).
 - Write everything in English — branch names, commit messages, pull-request titles and bodies, review comments, code comments, documentation, and specification text. No bilingual sections. Changing this rule takes a recorded decision in `microservice-app-docs`, not a remark in conversation.
 - Open every pull request through `.github/pull_request_template.md` and follow `microservice-app-docs/docs/Pull request and task tracking conventions.md`: one concern per short-lived `<type>/<summary>` branch, a Conventional Commit title with a scope, and every template section filled. Constitution principle 13 makes this binding, not advisory.
 - Keep the Spec-Driven Development commit pair intact: `test(<scope>): specify ...` must be committed failing before `feat(<scope>): implement ...`. Never squash the pair; the failing-test commit is the evidence the cycle was followed.
@@ -37,9 +38,9 @@ It exposes Prometheus metrics, reports traces to Zipkin, and publishes create/de
 
 ## Notes for the Kubernetes migration
 - The service listens on `TODO_API_PORT` (default `8082`) and serves `/metrics` on the same port.
-- Runtime variables are `TODO_API_PORT` (`8082`), `JWT_SECRET` (`foo` fallback), `REDIS_HOST` (`localhost`), `REDIS_PORT` (`6379`), `REDIS_CHANNEL` (`log_channel`), and `ZIPKIN_URL` (`http://127.0.0.1:9411/api/v2/spans`).
+- Runtime variables are `TODO_API_PORT` (`8082`), `JWT_SECRET` (`foo` fallback), `REDIS_HOST` (`localhost`), `REDIS_PORT` (`6379`), `REDIS_CHANNEL` (`log_channel`), `OTEL_EXPORTER_OTLP_ENDPOINT` (unset disables trace export), and `OTEL_SERVICE_NAME` (`todos-api`).
 - Treat `JWT_SECRET` as a Kubernetes Secret shared with token-issuing components; do not rely on the source fallback.
-- External dependencies are Redis pub/sub, the HTTP Zipkin collector, and JWT compatibility with the Auth API; there is no database.
+- External dependencies are Redis pub/sub, the OTLP trace collector, and JWT compatibility with the Auth API; there is no database.
 - In-memory todos disappear on restart and diverge across replicas, so persistence and horizontal-scaling behavior require an explicit migration decision.
 - The image declares neither `EXPOSE` nor `HEALTHCHECK`, and the app has no health/readiness route; only `/metrics` and authenticated todo routes exist.
 - Review the Node 8 base image, root execution, `npm install`, inclusion of dev dependencies, the `npm start`/`nodemon` process chain, and the missing `.dockerignore` before production use.

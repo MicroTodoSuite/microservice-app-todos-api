@@ -1,17 +1,13 @@
 'use strict';
 
+// Tracing starts before express and http load, or their requests produce no
+// spans (spec 010).
+require('./tracing').start();
+
 const express = require('express');
 const { expressjwt } = require('express-jwt');
 const prometheus = require('prom-client');
 const redis = require('redis');
-const {
-  Tracer,
-  BatchRecorder,
-  jsonEncoder: { JSON_V2 }
-} = require('zipkin');
-const CLSContext = require('zipkin-context-cls');
-const { HttpLogger } = require('zipkin-transport-http');
-const zipkinMiddleware = require('zipkin-instrumentation-express').expressMiddleware;
 const routes = require('./routes');
 const {
   createHealthState,
@@ -42,22 +38,8 @@ function createRedisClient () {
   });
 }
 
-function createTracer () {
-  const zipkinURL = process.env.ZIPKIN_URL || 'http://127.0.0.1:9411/api/v2/spans';
-  const ctxImpl = new CLSContext('zipkin');
-  const recorder = new BatchRecorder({
-    logger: new HttpLogger({
-      endpoint: zipkinURL,
-      jsonEncoder: JSON_V2,
-      error: (error) => console.error('Error sending data to Zipkin:', error)
-    })
-  });
-  return new Tracer({ ctxImpl, recorder, localServiceName: 'todos-api' });
-}
-
 function createApp (options = {}) {
   const app = express();
-  const tracer = options.tracer || createTracer();
   const redisClient = options.redisClient || createRedisClient();
   const logChannel = options.logChannel || process.env.REDIS_CHANNEL || 'log_channel';
   const jwtSecret = options.jwtSecret || process.env.JWT_SECRET || 'foo';
@@ -117,9 +99,6 @@ function createApp (options = {}) {
     algorithms: ['HS256'],
     requestProperty: 'user'
   }));
-  if (options.enableTracing !== false) {
-    app.use(zipkinMiddleware({ tracer }));
-  }
 
   app.use(function (err, req, res, next) {
     if (err.name === 'UnauthorizedError') {
@@ -134,7 +113,6 @@ function createApp (options = {}) {
   app.locals.config = config;
 
   routes(app, {
-    tracer,
     redisClient,
     logChannel,
     redisBreaker,
@@ -151,4 +129,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { createApp, createRedisClient, createTracer };
+module.exports = { createApp, createRedisClient };
