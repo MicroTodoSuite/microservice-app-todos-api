@@ -5,7 +5,7 @@ It exposes Prometheus metrics, reports traces through OpenTelemetry to Jaeger, a
 ## Stack
 - Language/runtime: CommonJS JavaScript on Node.js 8.17.0 with npm 6.13.4, as documented and used by `node:8.17.0-alpine`.
 - Framework: Express 4.15.4 (`^4.15.4` in `package.json`, pinned to 4.15.4 in `package-lock.json`).
-- Integrations: `express-jwt` 5.3.0, Redis client 2.8.0, `prom-client` 12.0.0, and OpenTelemetry tracing (`@opentelemetry/sdk-trace-node` 2.11.0, the OTLP gRPC exporter 0.222.0, and the HTTP and Express instrumentations).
+- Integrations: `express-jwt` 5.3.0, Redis client 2.8.0, the OpenTelemetry metrics SDK with its Prometheus exporter, and OpenTelemetry tracing (`@opentelemetry/sdk-trace-node` 2.11.0, the OTLP gRPC exporter 0.222.0, and the HTTP and Express instrumentations).
 
 ## Commands
 - Install/build: `npm install` (the README's documented build step and the Dockerfile's dependency-install command).
@@ -16,6 +16,7 @@ It exposes Prometheus metrics, reports traces through OpenTelemetry to Jaeger, a
 
 ## Structure
 - `server.js`: starts tracing first, then creates the Express app and configures Redis, JWT validation, Prometheus metrics, and the listener.
+- `metrics.js`: OpenTelemetry meter provider whose Prometheus exporter serves `/metrics`, with the request counter and duration histogram under their existing series names.
 - `tracing.js`: OpenTelemetry tracer provider, OTLP export when `OTEL_EXPORTER_OTLP_ENDPOINT` is set, and HTTP and Express instrumentations that skip `/health/*` and `/metrics`.
 - `routes.js`: maps `/todos` and `/todos/:taskId` to controller operations.
 - `todoController.js`: stores per-user todos in memory and publishes create/delete events to Redis.

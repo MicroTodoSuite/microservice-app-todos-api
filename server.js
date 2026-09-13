@@ -6,9 +6,9 @@ require('./tracing').start();
 
 const express = require('express');
 const { expressjwt } = require('express-jwt');
-const prometheus = require('prom-client');
 const redis = require('redis');
 const routes = require('./routes');
+const { createMetrics } = require('./metrics');
 const {
   createHealthState,
   registerOperationalRoutes,
@@ -57,42 +57,17 @@ function createApp (options = {}) {
     openMs: config.redis.breakerOpenMs
   });
 
-  const register = new prometheus.Registry();
-  const requestCount = new prometheus.Counter({
-    name: 'todo_api_requests_total',
-    help: 'Total number of requests handled by the Todo API',
-    labelNames: ['method', 'status'],
-    registers: [register]
-  });
-  const requestDuration = new prometheus.Histogram({
-    name: 'todo_api_request_duration_seconds',
-    help: 'Duration of requests handled by the Todo API',
-    labelNames: ['method'],
-    registers: [register]
-  });
-  prometheus.collectDefaultMetrics({ register, prefix: 'todos_api_' });
-
-  const metricsHandler = async (req, res) => {
-    res.set('Content-Type', register.contentType);
-    res.end(await register.metrics());
-  };
+  const metrics = createMetrics();
 
   // Correlation first, so every downstream log line and the audit record all
   // carry the same id.
   app.use(correlationMiddleware());
 
-  app.use((req, res, next) => {
-    const stopTimer = requestDuration.startTimer({ method: req.method });
-    res.on('finish', () => {
-      requestCount.labels(req.method, String(res.statusCode)).inc();
-      stopTimer();
-    });
-    next();
-  });
+  app.use(metrics.middleware);
   // Before expressjwt, deliberately: a probe or a scrape that needs a token
   // answers 401, Kubernetes reads that as unhealthy, and every pod restarts
   // forever while the application is fine.
-  registerOperationalRoutes(app, health, metricsHandler);
+  registerOperationalRoutes(app, health, metrics.handler);
 
   app.use(expressjwt({
     secret: jwtSecret,
