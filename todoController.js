@@ -8,11 +8,13 @@ const OPERATION_CREATE = 'CREATE',
       OPERATION_DELETE = 'DELETE';
 
 class TodoController {
-    constructor({redisClient, logChannel, redisBreaker, redisPublishTimeoutMs}) {
+    constructor({redisClient, logChannel, redisBreaker, redisPublishTimeoutMs, metrics}) {
         this._redisClient = redisClient;
         this._logChannel = logChannel;
         this._redisBreaker = redisBreaker;
         this._redisPublishTimeoutMs = redisPublishTimeoutMs || 1000;
+        // Business counters (gitops spec 011); a no-op when none is supplied.
+        this._metrics = metrics || { todoCreated () {}, todoDeleted () {} };
     }
 
     // TODO: these methods are not concurrent-safe
@@ -37,14 +39,20 @@ class TodoController {
 
         this._logOperation(OPERATION_CREATE, req.user.username, todo.id, req.correlationId)
 
+        this._metrics.todoCreated()
         res.json(todo)
     }
 
     delete (req, res) {
         const data = this._getTodoData(req.user.username)
         const id = req.params.taskId
+        // The response stays 204 for a missing id, but only a real deletion counts.
+        const existed = Object.prototype.hasOwnProperty.call(data.items, id)
         delete data.items[id]
         this._setTodoData(req.user.username, data)
+        if (existed) {
+            this._metrics.todoDeleted()
+        }
 
         this._logOperation(OPERATION_DELETE, req.user.username, id, req.correlationId)
 

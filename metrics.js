@@ -38,6 +38,19 @@ function createMetrics () {
     description: 'Duration of requests handled by the Todo API'
   });
 
+  // Business metrics (spec 011 FR-006, FR-008): no attributes, so no user
+  // identity or todo content can reach a label.
+  const todosCreated = meter.createCounter('todo_api_todos_created', {
+    description: 'Todos created successfully'
+  });
+  const todosDeleted = meter.createCounter('todo_api_todos_deleted', {
+    description: 'Existing todos deleted successfully'
+  });
+  const business = {
+    todoCreated: () => todosCreated.add(1),
+    todoDeleted: () => todosDeleted.add(1)
+  };
+
   function middleware (req, res, next) {
     const started = process.hrtime.bigint();
     res.on('finish', () => {
@@ -51,7 +64,7 @@ function createMetrics () {
     exporter.getMetricsRequestHandler(req, res);
   }
 
-  return { middleware, handler };
+  return { middleware, handler, business };
 }
 
 module.exports = { createMetrics };

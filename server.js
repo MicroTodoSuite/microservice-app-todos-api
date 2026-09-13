@@ -91,7 +91,8 @@ function createApp (options = {}) {
     redisClient,
     logChannel,
     redisBreaker,
-    redisPublishTimeoutMs: options.redisPublishTimeoutMs || config.redis.publishTimeoutMs
+    redisPublishTimeoutMs: options.redisPublishTimeoutMs || config.redis.publishTimeoutMs,
+    metrics: metrics.business
   });
 
   return app;
