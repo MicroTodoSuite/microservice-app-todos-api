@@ -35,6 +35,17 @@ The service scans environment for variables:
 - `REDIS_PORT` - port of Redis
 - `REDIS_CHANNEL` - channel the processor is going to listen to
 
+## Metrics
+
+Metrics are recorded through OpenTelemetry. `metrics.js` builds a meter provider
+whose Prometheus exporter serves `GET /metrics` on `TODO_API_PORT`, without scope
+labels, `target_info`, or runtime metrics. The route needs no JWT.
+
+- `todo_api_requests_total{method,status}` - requests handled
+- `todo_api_request_duration_seconds{method}` - request duration histogram
+- `todo_api_todos_created_total` - todos stored by a create request
+- `todo_api_todos_deleted_total` - todos deleted whose id existed (a delete of a missing id still answers 204 but is not counted)
+
 ## Building
 
 ```
