@@ -33,10 +33,13 @@ function fixture () {
 test('metrics remains reachable without a bearer token', async () => {
   const { app } = fixture();
   const baseURL = await start(app);
+  // Spec 011 drops the default runtime metrics this test used to look for, so
+  // it checks a golden-signal series produced by a first request instead.
+  await fetch(`${baseURL}/health/live`);
   const response = await fetch(`${baseURL}/metrics`);
 
   assert.equal(response.status, 200);
-  assert.match(await response.text(), /todos_api_process_/);
+  assert.match(await response.text(), /todo_api_requests_total/);
 });
 
 test('todo routes reject missing JWT credentials', async () => {
