@@ -1,3 +1,10 @@
+# [1.4.0](https://github.com/MicroTodoSuite/microservice-app-todos-api/compare/v1.3.0...v1.4.0) (2026-09-13)
+
+
+### Features
+
+* **tracing:** trace todos-api through opentelemetry ([#22](https://github.com/MicroTodoSuite/microservice-app-todos-api/issues/22)) ([6c4573c](https://github.com/MicroTodoSuite/microservice-app-todos-api/commit/6c4573cf51614a4de48b0eccef719dd9673c4f8b)), closes [#123](https://github.com/MicroTodoSuite/microservice-app-todos-api/issues/123)
+
 # [1.3.0](https://github.com/MicroTodoSuite/microservice-app-todos-api/compare/v1.2.0...v1.3.0) (2026-09-09)
 
 
