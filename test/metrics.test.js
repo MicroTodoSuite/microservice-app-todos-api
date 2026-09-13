@@ -10,6 +10,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const { afterEach, test } = require('node:test');
+const jwt = require('jsonwebtoken');
 const { createApp } = require('../server');
 
 const openServers = [];
@@ -98,5 +99,73 @@ test('no metric is recorded through prom-client', () => {
   for (const file of sources) {
     const text = fs.readFileSync(path.join(root, file), 'utf8');
     assert.doesNotMatch(text, /require\(['"]prom-client['"]\)/, `${file} must not require prom-client`);
+  }
+});
+
+// --- business metrics (spec 011 T007) ----------------------------------------
+
+function authorization () {
+  return { Authorization: `Bearer ${jwt.sign({ username: 'metrics-user' }, 'test-secret')}` };
+}
+
+async function countOf (base, name) {
+  const body = await (await fetch(`${base}/metrics`)).text();
+  const lines = samples(body, name);
+  return lines.length === 0 ? 0 : Number(lines[0].split(' ').pop());
+}
+
+async function createTodo (base) {
+  const response = await fetch(`${base}/todos`, {
+    method: 'POST',
+    headers: { ...authorization(), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ content: 'measured' })
+  });
+  assert.equal(response.status, 200);
+  return (await response.json()).id;
+}
+
+test('a created todo increases todo_api_todos_created_total by one', async () => {
+  const base = await start(buildApp());
+  assert.equal(await countOf(base, 'todo_api_todos_created_total'), 0);
+  await createTodo(base);
+  assert.equal(await countOf(base, 'todo_api_todos_created_total'), 1);
+});
+
+test('deleting an existing todo counts once; deleting a missing id does not', async () => {
+  const base = await start(buildApp());
+  const id = await createTodo(base);
+
+  const existing = await fetch(`${base}/todos/${id}`, { method: 'DELETE', headers: authorization() });
+  assert.equal(existing.status, 204);
+  assert.equal(await countOf(base, 'todo_api_todos_deleted_total'), 1);
+
+  const missing = await fetch(`${base}/todos/999999`, { method: 'DELETE', headers: authorization() });
+  assert.equal(missing.status, 204, 'a missing id still answers 204, as before');
+  assert.equal(await countOf(base, 'todo_api_todos_deleted_total'), 1);
+});
+
+test('a request rejected for a missing JWT changes neither business count', async () => {
+  const base = await start(buildApp());
+  const rejected = await fetch(`${base}/todos`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ content: 'unauthenticated' })
+  });
+  assert.equal(rejected.status, 401);
+  assert.equal(await countOf(base, 'todo_api_todos_created_total'), 0);
+  assert.equal(await countOf(base, 'todo_api_todos_deleted_total'), 0);
+});
+
+test('the business series carry no labels', async () => {
+  const base = await start(buildApp());
+  const id = await createTodo(base);
+  await fetch(`${base}/todos/${id}`, { method: 'DELETE', headers: authorization() });
+  const body = await (await fetch(`${base}/metrics`)).text();
+  for (const name of ['todo_api_todos_created_total', 'todo_api_todos_deleted_total']) {
+    const lines = samples(body, name);
+    assert.ok(lines.length > 0, `${name} is missing`);
+    for (const line of lines) {
+      assert.deepEqual(labelNames(line), [], line);
+    }
   }
 });
