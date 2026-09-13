@@ -1,3 +1,12 @@
+# [1.5.0](https://github.com/MicroTodoSuite/microservice-app-todos-api/compare/v1.4.0...v1.5.0) (2026-09-13)
+
+
+### Features
+
+* **metrics:** count todos created and deleted in todos-api ([37fc416](https://github.com/MicroTodoSuite/microservice-app-todos-api/commit/37fc416c66af2980f701ba82e8ff2e4ce6b7dce8))
+* **metrics:** record todos-api metrics through opentelemetry ([a4c9bc1](https://github.com/MicroTodoSuite/microservice-app-todos-api/commit/a4c9bc1bbd27140fe1dbc39d09d2c44701b08dc2))
+* **metrics:** record todos-api metrics through opentelemetry ([#24](https://github.com/MicroTodoSuite/microservice-app-todos-api/issues/24)) ([f7f398e](https://github.com/MicroTodoSuite/microservice-app-todos-api/commit/f7f398ec232cc1ece1b60dd15c6fb81d780a09b4)), closes [MicroTodoSuite/microservice-app-gitops#136](https://github.com/MicroTodoSuite/microservice-app-gitops/issues/136) [MicroTodoSuite/microservice-app-gitops#136](https://github.com/MicroTodoSuite/microservice-app-gitops/issues/136)
+
 # [1.4.0](https://github.com/MicroTodoSuite/microservice-app-todos-api/compare/v1.3.0...v1.4.0) (2026-09-13)
 
 
