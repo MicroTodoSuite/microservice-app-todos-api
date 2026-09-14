@@ -13,7 +13,7 @@ on:
 
 jobs:
   ci:
-    uses: MicroTodoSuite/.github/.github/workflows/ci.yml@11fbdb2be18caba7b7c7528c1e7f48b8e028977d
+    uses: MicroTodoSuite/.github/.github/workflows/ci.yml@d0da1aefcc8affcd07087d6e0c2c6391b270001d
     with:
       service-name: todos-api
       language: node
@@ -31,7 +31,7 @@ jobs:
     # activation. Keep legacy semantic-release opt-in until its token exists.
     if: ${{ github.event_name == 'push' && vars.ENABLE_LEGACY_SEMANTIC_RELEASE == 'true' }}
     needs: ci
-    uses: MicroTodoSuite/.github/.github/workflows/release.yml@5c4e133fc528ef6ff596d146150321ca94760721
+    uses: MicroTodoSuite/.github/.github/workflows/release.yml@d0da1aefcc8affcd07087d6e0c2c6391b270001d
     secrets:
       release-app-id: ${{ secrets.RELEASE_APP_ID }}
       release-app-key: ${{ secrets.RELEASE_APP_KEY }}
@@ -41,7 +41,7 @@ jobs:
     # dev/staging/prod activation required by feature 005.
     if: ${{ github.event_name == 'push' && vars.ENABLE_LEGACY_DEV_PROMOTION == 'true' && needs.release.outputs.released == 'true' }}
     needs: [ci, release]
-    uses: MicroTodoSuite/.github/.github/workflows/promote.yml@5c4e133fc528ef6ff596d146150321ca94760721
+    uses: MicroTodoSuite/.github/.github/workflows/promote.yml@d0da1aefcc8affcd07087d6e0c2c6391b270001d
     with:
       service-name: todos-api
       environment: dev
@@ -49,14 +49,14 @@ jobs:
       image-ref: ${{ needs.ci.outputs.image-ref }}
       publisher-role-arn: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/microtodosuite-github-ecr-publisher
     secrets:
-      gitops-app-id: ${{ secrets.GITOPS_PROMOTE_APP_ID }}
-      gitops-app-key: ${{ secrets.GITOPS_PROMOTE_APP_KEY }}
+      gitops-promote-app-id: ${{ secrets.GITOPS_PROMOTE_APP_ID }}
+      gitops-promote-app-key: ${{ secrets.GITOPS_PROMOTE_APP_KEY }}
 
   promote-staging:
     # Same immutable digest promoted to staging after dev (build-once).
     if: ${{ github.event_name == 'push' && vars.ENABLE_LEGACY_DEV_PROMOTION == 'true' && needs.release.outputs.released == 'true' }}
     needs: [ci, release, promote-dev]
-    uses: MicroTodoSuite/.github/.github/workflows/promote.yml@83b089bcb73a4a8c254b1413d4c03918786cfa63
+    uses: MicroTodoSuite/.github/.github/workflows/promote.yml@d0da1aefcc8affcd07087d6e0c2c6391b270001d
     with:
       service-name: todos-api
       environment: staging
@@ -64,8 +64,8 @@ jobs:
       image-ref: ${{ needs.ci.outputs.image-ref }}
       publisher-role-arn: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/microtodosuite-github-ecr-publisher
     secrets:
-      gitops-app-id: ${{ secrets.GITOPS_PROMOTE_APP_ID }}
-      gitops-app-key: ${{ secrets.GITOPS_PROMOTE_APP_KEY }}
+      gitops-promote-app-id: ${{ secrets.GITOPS_PROMOTE_APP_ID }}
+      gitops-promote-app-key: ${{ secrets.GITOPS_PROMOTE_APP_KEY }}
 
   gate-prod:
     # Manual approval gate for production (configure required reviewers on the
@@ -82,7 +82,7 @@ jobs:
     # as a canary with metric analysis (roadmap section 6).
     if: ${{ github.event_name == 'push' && vars.ENABLE_LEGACY_DEV_PROMOTION == 'true' && needs.release.outputs.released == 'true' }}
     needs: [ci, release, gate-prod]
-    uses: MicroTodoSuite/.github/.github/workflows/promote.yml@83b089bcb73a4a8c254b1413d4c03918786cfa63
+    uses: MicroTodoSuite/.github/.github/workflows/promote.yml@d0da1aefcc8affcd07087d6e0c2c6391b270001d
     with:
       service-name: todos-api
       environment: prod
@@ -90,5 +90,5 @@ jobs:
       image-ref: ${{ needs.ci.outputs.image-ref }}
       publisher-role-arn: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/microtodosuite-github-ecr-publisher
     secrets:
-      gitops-app-id: ${{ secrets.GITOPS_PROMOTE_APP_ID }}
-      gitops-app-key: ${{ secrets.GITOPS_PROMOTE_APP_KEY }}
+      gitops-promote-app-id: ${{ secrets.GITOPS_PROMOTE_APP_ID }}
+      gitops-promote-app-key: ${{ secrets.GITOPS_PROMOTE_APP_KEY }}
