@@ -1,3 +1,10 @@
+## [1.5.1](https://github.com/MicroTodoSuite/microservice-app-todos-api/compare/v1.5.0...v1.5.1) (2026-09-14)
+
+
+### Bug Fixes
+
+* **ci:** repoint to the latest .github reusable workflow refs ([#27](https://github.com/MicroTodoSuite/microservice-app-todos-api/issues/27)) ([4dcf34d](https://github.com/MicroTodoSuite/microservice-app-todos-api/commit/4dcf34dd0c7520e36594f0416d8834ec9f0c668a)), closes [#142](https://github.com/MicroTodoSuite/microservice-app-todos-api/issues/142) [#19](https://github.com/MicroTodoSuite/microservice-app-todos-api/issues/19)
+
 # [1.5.0](https://github.com/MicroTodoSuite/microservice-app-todos-api/compare/v1.4.0...v1.5.0) (2026-09-13)
 
 
