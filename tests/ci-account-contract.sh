@@ -3,8 +3,7 @@ set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 workflow="$repo_root/.github/workflows/ci.yml"
-service_name="${repo_root##*/}"
-service_name="${service_name#microservice-app-}"
+service_name="$(sed -n 's/^[[:space:]]*service-name:[[:space:]]*\([^[:space:]]*\)[[:space:]]*$/\1/p' "$workflow" | head -1)"
 retired_ci_ref="MicroTodoSuite/.github/.github/workflows/ci.yml@5c4e133fc528ef6ff596d146150321ca94760721"
 account_variable='${{ vars.AWS_ACCOUNT_ID }}'
 
@@ -13,14 +12,27 @@ fail() {
   exit 1
 }
 
-# The AWS account lives in one organization variable. A literal account in this
-# workflow is one more file to find and edit the next time the account changes.
-grep -Fq -- "ecr-repository: ${account_variable}.dkr.ecr.us-east-1.amazonaws.com/microtodosuite/${service_name}" "$workflow" \
-  || fail "neutral ECR input does not read the organization account variable"
+# The account remains an organization variable, while the repository suffix is
+# the immutable output of the rebuilt shared registry root.
+case "$service_name" in
+  auth-api) repository_suffix=authapi ;;
+  frontend) repository_suffix=frontend ;;
+  log-message-processor) repository_suffix=logmsgproc ;;
+  todos-api) repository_suffix=todosapi ;;
+  users-api) repository_suffix=usersapi ;;
+  *) fail "unsupported service-name input: $service_name" ;;
+esac
+
+expected_repository="${account_variable}.dkr.ecr.us-east-1.amazonaws.com/lex-mts-shd-ecr-${repository_suffix}"
+grep -Fq -- "ecr-repository: ${expected_repository}" "$workflow" \
+  || fail "ECR input does not target ${expected_repository}"
 publisher_inputs="$(grep -c 'publisher-role-arn:' "$workflow" || true)"
-variable_inputs="$(grep -cF -- "publisher-role-arn: arn:aws:iam::${account_variable}:role/microtodosuite-github-ecr-publisher" "$workflow" || true)"
+variable_inputs="$(grep -cF -- "publisher-role-arn: arn:aws:iam::${account_variable}:role/lex-mts-shd-role-ecrpublish" "$workflow" || true)"
 [[ "$publisher_inputs" -gt 0 && "$publisher_inputs" == "$variable_inputs" ]] \
-  || fail "only $variable_inputs of $publisher_inputs publisher role inputs read the organization account variable"
+  || fail "only $variable_inputs of $publisher_inputs inputs use the rebuilt publisher role"
+if grep -Eq 'microtodosuite/(auth-api|frontend|log-message-processor|todos-api|users-api)|microtodosuite-github-ecr-publisher' "$workflow"; then
+  fail "active CI workflow still references a retired publication name"
+fi
 if grep -Eq 'arn:aws:iam::[0-9]{12}:|[0-9]{12}\.dkr\.ecr\.' "$workflow"; then
   fail "active CI workflow still pins a literal AWS account"
 fi
