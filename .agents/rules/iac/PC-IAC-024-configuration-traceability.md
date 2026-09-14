@@ -14,7 +14,16 @@ Configuration that varies by environment MUST originate in that environment's
 
 Pure computations and constants intrinsic to a module MAY live in `locals.tf`.
 
+Environment configuration includes the region and zones (MTS-IAC-103), CIDR
+blocks, instance types and other sizes, domains, and the GitHub organization in
+OIDC subjects. `0.0.0.0/0` is not environment configuration.
+
 ## Automated check
 
-Reviewed through the iac-review skill; a `locals` map literal with more than one
-environment-sized value is flagged.
+In every live root, `scripts/iac/contracts.py` in `MicroTodoSuite/.github`
+rejects a literal CIDR block other than `0.0.0.0/0`, an instance type, a GitHub
+organization in an OIDC subject (`repo:<organization>/`), and a domain held by a
+`domain`, `domain_name`, `zone_name`, `hostname`, or `fqdn` attribute. PC-IAC-002
+already refuses a default on a variable that identifies or sizes
+infrastructure. Other sizes, counts, and structured environment values are
+reviewed through the iac-review skill.
