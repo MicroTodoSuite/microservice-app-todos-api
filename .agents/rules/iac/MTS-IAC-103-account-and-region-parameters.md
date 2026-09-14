@@ -18,8 +18,9 @@
   the exact account it permits and its reason.
 - Roots MUST bind the provider to it with `allowed_account_ids`
   (PC-IAC-005) and derive ARNs from it rather than typing them.
-- The region is an **environment** parameter: each environment's `.tfvars`
-  declares `region`, and nothing else in the root types a region.
+- The region and its Availability Zones are **environment** parameters: each
+  environment's `.tfvars` declares them, and nothing else in the root types a
+  region or a zone.
 - Moving to another account is `scripts/set-aws-account.sh <id>` in each
   repository plus one update of the organization variable. Retired accounts stay
   listed and cannot be reused silently.
@@ -27,4 +28,6 @@
 ## Automated check
 
 The two account contracts in each repository and the CI account contract in each
-service repository.
+service repository. In every live Terraform root, `scripts/iac/contracts.py` in
+`MicroTodoSuite/.github` rejects a provider without `allowed_account_ids` and a
+literal account ID, region, or Availability Zone.
