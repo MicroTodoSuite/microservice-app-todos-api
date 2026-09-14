@@ -13,15 +13,15 @@ on:
 
 jobs:
   ci:
-    uses: MicroTodoSuite/.github/.github/workflows/ci.yml@d0da1aefcc8affcd07087d6e0c2c6391b270001d
+    uses: MicroTodoSuite/.github/.github/workflows/ci.yml@c9cd8d96c2c679b7c3c59fcede62084c40648f84
     with:
       service-name: todos-api
       language: node
       test-command: npm ci --ignore-scripts && npm test
       source-audit-command: npm audit --omit=dev --audit-level=high
       contract-command: npx --yes @stoplight/spectral-cli@6 lint contracts/openapi.yaml contracts/asyncapi.yaml --ruleset .spectral.yaml
-      ecr-repository: ${{ vars.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/microtodosuite/todos-api
-      publisher-role-arn: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/microtodosuite-github-ecr-publisher
+      ecr-repository: ${{ vars.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/lex-mts-shd-ecr-todosapi
+      publisher-role-arn: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/lex-mts-shd-role-ecrpublish
       sonar-project-key: MicroTodoSuite_todos-api
       sonar-host-url: ${{ vars.SONAR_HOST_URL }}
     secrets: inherit
@@ -47,7 +47,7 @@ jobs:
       environment: dev
       image-digest: ${{ needs.ci.outputs.image-digest }}
       image-ref: ${{ needs.ci.outputs.image-ref }}
-      publisher-role-arn: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/microtodosuite-github-ecr-publisher
+      publisher-role-arn: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/lex-mts-shd-role-ecrpublish
     secrets:
       gitops-promote-app-id: ${{ secrets.GITOPS_PROMOTE_APP_ID }}
       gitops-promote-app-key: ${{ secrets.GITOPS_PROMOTE_APP_KEY }}
@@ -62,7 +62,7 @@ jobs:
       environment: staging
       image-digest: ${{ needs.ci.outputs.image-digest }}
       image-ref: ${{ needs.ci.outputs.image-ref }}
-      publisher-role-arn: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/microtodosuite-github-ecr-publisher
+      publisher-role-arn: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/lex-mts-shd-role-ecrpublish
     secrets:
       gitops-promote-app-id: ${{ secrets.GITOPS_PROMOTE_APP_ID }}
       gitops-promote-app-key: ${{ secrets.GITOPS_PROMOTE_APP_KEY }}
@@ -88,7 +88,7 @@ jobs:
       environment: prod
       image-digest: ${{ needs.ci.outputs.image-digest }}
       image-ref: ${{ needs.ci.outputs.image-ref }}
-      publisher-role-arn: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/microtodosuite-github-ecr-publisher
+      publisher-role-arn: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/lex-mts-shd-role-ecrpublish
     secrets:
       gitops-promote-app-id: ${{ secrets.GITOPS_PROMOTE_APP_ID }}
       gitops-promote-app-key: ${{ secrets.GITOPS_PROMOTE_APP_KEY }}
