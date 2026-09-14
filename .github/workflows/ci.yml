@@ -13,7 +13,7 @@ on:
 
 jobs:
   ci:
-    uses: MicroTodoSuite/.github/.github/workflows/ci.yml@d0da1aefcc8affcd07087d6e0c2c6391b270001d
+    uses: MicroTodoSuite/.github/.github/workflows/ci.yml@c9cd8d96c2c679b7c3c59fcede62084c40648f84
     with:
       service-name: todos-api
       language: node
