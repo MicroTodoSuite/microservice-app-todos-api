@@ -41,7 +41,7 @@ jobs:
     # dev/staging/prod activation required by feature 005.
     if: ${{ github.event_name == 'push' && vars.ENABLE_LEGACY_DEV_PROMOTION == 'true' && needs.release.outputs.released == 'true' }}
     needs: [ci, release]
-    uses: MicroTodoSuite/.github/.github/workflows/promote.yml@d0da1aefcc8affcd07087d6e0c2c6391b270001d
+    uses: MicroTodoSuite/.github/.github/workflows/promote.yml@a241b3b1e38e5d3efc6564806d72fc280a0c4fc6
     with:
       service-name: todos-api
       environment: dev
@@ -56,7 +56,7 @@ jobs:
     # Same immutable digest promoted to staging after dev (build-once).
     if: ${{ github.event_name == 'push' && vars.ENABLE_LEGACY_DEV_PROMOTION == 'true' && needs.release.outputs.released == 'true' }}
     needs: [ci, release, promote-dev]
-    uses: MicroTodoSuite/.github/.github/workflows/promote.yml@d0da1aefcc8affcd07087d6e0c2c6391b270001d
+    uses: MicroTodoSuite/.github/.github/workflows/promote.yml@a241b3b1e38e5d3efc6564806d72fc280a0c4fc6
     with:
       service-name: todos-api
       environment: staging
@@ -82,7 +82,7 @@ jobs:
     # as a canary with metric analysis (roadmap section 6).
     if: ${{ github.event_name == 'push' && vars.ENABLE_LEGACY_DEV_PROMOTION == 'true' && needs.release.outputs.released == 'true' }}
     needs: [ci, release, gate-prod]
-    uses: MicroTodoSuite/.github/.github/workflows/promote.yml@d0da1aefcc8affcd07087d6e0c2c6391b270001d
+    uses: MicroTodoSuite/.github/.github/workflows/promote.yml@a241b3b1e38e5d3efc6564806d72fc280a0c4fc6
     with:
       service-name: todos-api
       environment: prod
