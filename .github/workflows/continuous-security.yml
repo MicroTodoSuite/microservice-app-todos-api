@@ -1,0 +1,34 @@
+name: continuous security
+
+# Thin caller: the assessment itself lives in the organization's reusable
+# workflow (MicroTodoSuite/.github). This repository declares only its identity,
+# its image, and when the assessment runs.
+#
+# The schedule is here on purpose. GitHub does not fire `schedule` for a
+# reusable workflow, so the cron has to live in every caller (gitops spec 009
+# T146, FR-035).
+#
+# image-reader-role-arn is empty until Terraform creates a read-only ECR role
+# for this assessment. Until then the image surface reports BLOCKED and the
+# source surface still runs, which is the honest state, not a silent skip.
+
+on:
+  schedule:
+    # Daily. Trivy's database refreshes several times a day, so a CVE disclosed
+    # against an already-published artifact surfaces within a day.
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write # OIDC to the read-only image role, no static credentials
+  issues: write # route an actionable finding into this repository
+
+jobs:
+  continuous-security:
+    uses: MicroTodoSuite/.github/.github/workflows/continuous-security.yml@76023377e1567d0906a3e7627b66343dd1fec3cc
+    with:
+      service-name: todos-api
+      image-repository: ${{ vars.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/lex-mts-shd-ecr-todosapi
+      image-reader-role-arn: ""
+    secrets: inherit
