@@ -1,3 +1,10 @@
+## [1.5.2](https://github.com/MicroTodoSuite/microservice-app-todos-api/compare/v1.5.1...v1.5.2) (2026-09-21)
+
+
+### Bug Fixes
+
+* **ci:** pin the promotion workflow past the conventions repair ([#30](https://github.com/MicroTodoSuite/microservice-app-todos-api/issues/30)) ([487f176](https://github.com/MicroTodoSuite/microservice-app-todos-api/commit/487f176f0a253220b38778a44cf86f34260118d4)), closes [#191](https://github.com/MicroTodoSuite/microservice-app-todos-api/issues/191) [#192](https://github.com/MicroTodoSuite/microservice-app-todos-api/issues/192) [#193](https://github.com/MicroTodoSuite/microservice-app-todos-api/issues/193) [#195](https://github.com/MicroTodoSuite/microservice-app-todos-api/issues/195) [#196](https://github.com/MicroTodoSuite/microservice-app-todos-api/issues/196) [#198](https://github.com/MicroTodoSuite/microservice-app-todos-api/issues/198) [MicroTodoSuite/microservice-app-gitops#205](https://github.com/MicroTodoSuite/microservice-app-gitops/issues/205)
+
 ## [1.5.1](https://github.com/MicroTodoSuite/microservice-app-todos-api/compare/v1.5.0...v1.5.1) (2026-09-14)
 
 
