@@ -5,8 +5,9 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 workflow="$repo_root/.github/workflows/ci.yml"
 service_name="${repo_root##*/}"
 service_name="${service_name#microservice-app-}"
-replacement_account="575172595729"
-retired_account="916491575487"
+replacement_account="376784708420"
+retired_account="575172595729"
+expected_repository="lex-mts-shd-ecr-todosapi"
 retired_ci_ref="MicroTodoSuite/.github/.github/workflows/ci.yml@5c4e133fc528ef6ff596d146150321ca94760721"
 
 fail() {
@@ -14,9 +15,9 @@ fail() {
   exit 1
 }
 
-grep -Fq -- "${replacement_account}.dkr.ecr.us-east-1.amazonaws.com/microtodosuite/${service_name}" "$workflow" \
+grep -Fq -- "${replacement_account}.dkr.ecr.us-east-1.amazonaws.com/${expected_repository}" "$workflow" \
   || fail "neutral ECR input does not target the replacement account"
-grep -Fq -- "arn:aws:iam::${replacement_account}:role/microtodosuite-github-ecr-publisher" "$workflow" \
+grep -Fq -- "arn:aws:iam::${replacement_account}:role/lex-mts-shd-role-ecrpublish" "$workflow" \
   || fail "publisher role input does not target the replacement account"
 if grep -Fq -- "$retired_account" "$workflow"; then
   fail "active CI workflow still references the retired account"
@@ -28,4 +29,3 @@ grep -Eq 'uses: MicroTodoSuite/\.github/\.github/workflows/ci\.yml@[0-9a-f]{40}$
   || fail "CI reusable workflow is not pinned to an immutable commit"
 
 printf 'ci-account-contract: PASS (%s)\n' "$service_name"
-
