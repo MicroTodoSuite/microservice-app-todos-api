@@ -44,6 +44,7 @@ resource had yet been created under `gcs`.
 | Flow log | `fl` | | CloudWatch log group | `cwl` |
 | Security group | `sg` | | SQS queue | `sqs` |
 | Network ACL | `nacl` | | Load balancer | `alb`, `nlb` |
+| EventBridge rule | `evr` | | CloudTrail trail | `ct` |
 
 **Azure** — abbreviations from the Cloud Adoption Framework
 
