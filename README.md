@@ -69,3 +69,11 @@ The software required to run this microservice, and the version that was tested:
 |-------------|----------|
 | Node        | 8.17.0   |
 | NPM         | 6.13.4   |
+
+## License
+
+This service is derived from
+[elgris/microservice-app-example](https://github.com/elgris/microservice-app-example)
+by Ivan Kirichenko, which is distributed under the MIT License. The original
+copyright and permission notice is kept in [LICENSE](LICENSE), as that license
+requires.
